@@ -1,0 +1,347 @@
+//ver.2
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);
+//button pins
+int leftButton = 47;
+int rightButton = 48;
+int selectButton = 49;
+//menu control variable
+int mainmenu = 1;
+int timerOn = 60; //time on var
+int timerOff = 15; //time off var
+int maxExercises = 5; // # of exercises var
+const String exerciseList[] = { //array of available exercises to choose from
+  "exercise A",
+  "exercise B",
+  "exercise C",
+  "exercise D",
+  "exercise E",
+  "exercise F",
+  "exercise G",
+  "exercise H"
+  
+};
+String exerciseSequence[5]; //what the main workout function uses to choose what exercises to show in sequence
+int exerciseCounter = 1; //used to choose exercieses in choose workout function
+int exerciseSelector; // used to write the exercise list choice into the sequence
+
+bool submenu = false; //dictates what state the screen is, if it is in a submenu or not.
+
+void setup() {
+ Serial.begin(9600);
+ lcd.init();
+ lcd.backlight();
+ pinMode(leftButton, INPUT);
+ pinMode(rightButton, INPUT);
+ pinMode(selectButton, INPUT);
+ homeScreen();
+ updateMenu();
+}
+void homeScreen(){ // displays homescreen on startup
+   lcd.clear();
+   lcd.setCursor(1,0);
+   lcd.print("Kyle's Workout ");
+   lcd.setCursor(3,1);
+   lcd.print("Trainer");
+   delay(4000);
+}
+
+void updateMenu() { //function that controls what the menu shows
+  switch(mainmenu){
+    case 1:
+    lcd.clear();
+    lcd.print(">setTimeOn");
+    lcd.setCursor(0,1);
+    lcd.print(" setTimeOff");
+    break;
+    case 2:
+    lcd.clear();
+    lcd.print(" setTimeOn");
+    lcd.setCursor(0,1);
+    lcd.print(">setTimeOff");
+    break;
+    case 3:
+    lcd.clear();
+    lcd.print(">set#Exercises");
+    lcd.setCursor(0,1);
+    lcd.print(" exerciseSelect");
+    break;
+    case 4:
+    lcd.clear();
+    lcd.print(" set#Exercises");
+    lcd.setCursor(0,1);
+    lcd.print(">exerciseSelect");
+    break;
+    case 5:
+    lcd.clear();
+    lcd.print(" exerciseSelect");
+    lcd.setCursor(0,1);
+    lcd.print(">startWorkout");
+    break;
+  }
+}
+void executeAction(){ // when select button is pressed do  these actions
+  switch(mainmenu){
+    case 1:
+    setTimerOn();
+    break;
+    case 2:
+    setTimerOff();
+    break;
+    case 3:
+    setNumExercises();
+    break;
+    case 4:
+    exerciseSelection();
+    break;
+    case 5:
+    startWorkout();
+    break;
+  }
+}
+
+
+void timerOnDisplay(){ //display of timer on
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("Set Time on");
+  lcd.setCursor(1,1);
+  lcd.print("seconds: ");
+  lcd.print(timerOn);
+}
+
+//this type of function creates isolated loop instead of going back to global loop
+void setTimerOn() {
+  timerOnDisplay();
+  submenu = true; // turns submenu true
+  Serial.println("action1 activated");
+  while (digitalRead(selectButton) == HIGH); //pause function when button is pressed, to prevent the loop to be skipped
+  delay(100);
+  while (digitalRead(selectButton) == LOW){ //create loop to wait for the time to be set
+    if(digitalRead(leftButton) == HIGH){
+      if (timerOn < 1){
+        timerOn = 1;
+      }
+      timerOn--;
+      delay(250);
+      while(digitalRead(leftButton) == HIGH);
+      timerOnDisplay();
+    }
+    if(digitalRead(rightButton) == HIGH) {
+      timerOn++;
+      delay(250);
+      while(digitalRead(rightButton) == HIGH);
+      timerOnDisplay();
+    }  
+  }
+  submenu = false; //exits submenu and activates menu
+  Serial.println("action1 deactivated");
+}
+
+void timerOffDisplay(){ // display of timer off 
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("Set Time off");
+  lcd.setCursor(1,1);
+  lcd.print("seconds: ");
+  lcd.print(timerOff);
+}
+
+
+void setTimerOff() {
+  timerOffDisplay();
+  submenu = true;
+  Serial.println("action2 activated");
+  while (digitalRead(selectButton) == HIGH); //pause function when button is pressed, to prevent the loop to be skipped
+  delay(100);
+  while (digitalRead(selectButton) == LOW){//create loop to wait for the time to be set 
+    if(digitalRead(leftButton) == HIGH){
+      if(timerOff < 1){
+        timerOff = 1;
+      }
+      timerOff--;
+      delay(250);
+      while(digitalRead(leftButton) == HIGH);
+      timerOffDisplay();
+    }
+    if(digitalRead(rightButton) == HIGH) {
+      timerOff++;
+      delay(250);
+      while(digitalRead(rightButton) == HIGH);
+      timerOffDisplay();
+    }  
+  }
+  submenu = false; //exits submenu and activates menu
+  Serial.println("action2 deactivated");
+}
+
+
+void NumExercisesDisplay(){ // display of timer off 
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("# of exercises");
+  lcd.setCursor(1,1);
+  lcd.print("Max: ");
+  lcd.print(maxExercises);
+}
+
+void setNumExercises() {
+  NumExercisesDisplay();
+  submenu = true;
+  Serial.println("action3 activated");
+  while (digitalRead(selectButton) == HIGH); //pause function when button is pressed, to prevent the loop to be skipped
+  delay(100);
+  while (digitalRead(selectButton) == LOW){//create loop to wait for the time to be set 
+    if(digitalRead(leftButton) == HIGH){
+      if(maxExercises < 1) {
+        maxExercises = 1;
+      }
+      maxExercises--;
+      delay(250);
+      while(digitalRead(leftButton) == HIGH);
+      NumExercisesDisplay();
+    }
+    if(digitalRead(rightButton) == HIGH) {
+      maxExercises++;
+      delay(250);
+      while(digitalRead(rightButton) == HIGH);
+      NumExercisesDisplay();
+    }  
+  }
+  submenu = false; //exits submenu and activates menu
+  Serial.println("action3 deactivated");
+}
+
+
+
+void exerciseDisplay(){ //displays num of exercises menu
+  lcd.clear();
+  lcd.setCursor(1,0);
+  lcd.print("Exercise: #");
+  lcd.print(exerciseCounter);
+  lcd.setCursor(1,1);
+  lcd.print(exerciseList[exerciseSelector]);
+}
+
+
+void exerciseSelection() {
+  exerciseDisplay();
+  submenu = true;
+  Serial.println("action4 activated");
+  while (digitalRead(selectButton) == HIGH); //pause function when button is pressed, to prevent the loop to be skipped
+  delay(100);
+  for( exerciseCounter = 1; exerciseCounter < maxExercises+1; exerciseCounter++){ //each time the counter increases, set each exercise slot with exercise from exerciseList
+    while (digitalRead(selectButton) == HIGH);
+    delay(100);
+    exerciseDisplay();
+    while (digitalRead(selectButton) == LOW){ //wait for specific exercise to be choosen loop
+      if(digitalRead(leftButton) == HIGH){
+          exerciseSelector--;
+          delay(250);
+          exerciseDisplay();
+          while (digitalRead(leftButton) == HIGH);
+      }
+      if(digitalRead(rightButton) == HIGH){
+          exerciseSelector++;
+          delay(250);
+          exerciseDisplay();
+          while (digitalRead(leftButton) == HIGH);  
+      }
+   }//while loop ends
+   exerciseSequence[exerciseCounter-1] = exerciseList[exerciseSelector]; //make first exercise = what the exerciseList array value of exercise Selector
+   Serial.print("Choosen: ");
+   Serial.println(exerciseList[exerciseSelector]);
+   exerciseDisplay();
+  }//for loop ends
+  exerciseCounter = 1;
+  submenu = false; //exits submenu and activates menu
+  Serial.println("action4 deactivated");
+}
+
+
+
+int currentNum(int exerciseNum){// sets int to be the current int in the main loop
+  int currentnum = exerciseNum;
+  return currentnum;
+}
+void startWorkout() {
+  submenu = true;
+  while (digitalRead(selectButton) == HIGH); //pause function when button is pressed, to prevent the loop to be skipped
+  delay(100);
+  Serial.println("action5 activated");
+  for( int i = 3; i > 0; i--){ //countdown loop
+    lcd.clear();
+    lcd.setCursor(1,0);
+    lcd.print("Starting in..");
+    lcd.setCursor(8,1);
+    lcd.print(i);
+    delay(1000);
+  }//countdown loop ends
+  for (int i = 0; i < maxExercises; i++){ // main workout logic loop
+    lcd.clear();
+    lcd.setCursor(1,0);
+    int currentExercise = currentNum(i); //current num = i, then stores in current Exercise int variable
+    lcd.print(exerciseSequence[currentExercise]); //prints exerciseSequence based on exerciseNum;
+    for(int i = timerOn; i > 0; i--){//timer on loop
+      lcd.clear();
+      lcd.setCursor(1,0);
+      lcd.print(exerciseSequence[currentExercise]);
+      lcd.setCursor(1,1);
+      lcd.print("Time left:  ");
+      lcd.print(i);
+      delay(1000);
+    }// timer on loop ends
+    for(int i = timerOff; i > 0; i--){
+      lcd.clear();
+      lcd.setCursor(1,0);
+      lcd.print("Take a break");
+      lcd.setCursor(7,1);
+      lcd.print(i);
+      delay(1000);
+    }//timer off loop ends
+  }// main workout loop ends
+  
+  submenu = false;//exits submenu and activates menu
+  Serial.println("action5 deactivated");
+}
+
+
+
+void loop() {// button press actions, for menu and submenus
+    if (digitalRead(leftButton) == HIGH){ //if downbutton is high, add +1 to menu int to update menu
+      if(!submenu){//if submenu is true do nothing
+        mainmenu--;
+    if(mainmenu < 1){ //makes sure that menu counter doesn't drop below 1
+      mainmenu = 1;
+    }
+    updateMenu();
+    delay(100);
+    while(digitalRead(leftButton) == HIGH);
+      }
+    
+  }
+  if (digitalRead(rightButton) == HIGH){ //if up button is high, subtract -1 to menu int to update menu
+    if(!submenu){ //if submenu is true do nothing
+          mainmenu++;
+        if(mainmenu > 5){ //make sure that menu counter exceed 4
+      mainmenu = 5;
+    }
+    updateMenu();
+    delay(100);
+    while(digitalRead(rightButton) == HIGH);
+    }
+
+  }
+  if(digitalRead(selectButton) == HIGH){ // if select button is high, run execute action function and update menu.
+    if(!submenu){ //if submenu is true do nothing
+    executeAction();// executes function depending on what is selected
+    updateMenu(); //closes submenu
+    delay(100);
+    while(digitalRead(selectButton) == HIGH);
+    }
+      
+  }
+
+}//loop ends
