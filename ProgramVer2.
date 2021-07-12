@@ -7,20 +7,21 @@ LiquidCrystal_I2C lcd(0x27,16,2);
 int leftButton = 47;
 int rightButton = 48;
 int selectButton = 49;
+int buzzPin = 7;
 //menu control variable
 int mainmenu = 1;
 int timerOn = 60; //time on var
 int timerOff = 15; //time off var
 int maxExercises = 5; // # of exercises var
 const String exerciseList[] = { //array of available exercises to choose from
-  "exercise A",
+  "exercise A", //0
   "exercise B",
   "exercise C",
   "exercise D",
   "exercise E",
   "exercise F",
   "exercise G",
-  "exercise H"
+  "exercise H" //7
   
 };
 String exerciseSequence[5]; //what the main workout function uses to choose what exercises to show in sequence
@@ -36,6 +37,7 @@ void setup() {
  pinMode(leftButton, INPUT);
  pinMode(rightButton, INPUT);
  pinMode(selectButton, INPUT);
+ pinMode(buzzPin, OUTPUT);
  homeScreen();
  updateMenu();
 }
@@ -238,13 +240,23 @@ void exerciseSelection() {
     exerciseDisplay();
     while (digitalRead(selectButton) == LOW){ //wait for specific exercise to be choosen loop
       if(digitalRead(leftButton) == HIGH){
+        if( exerciseSelector < 0 ){ //make sure that selector doesn't go below  array space alloted
+          exerciseSelector = 0;
+        }
+        else {
           exerciseSelector--;
+        } 
           delay(250);
           exerciseDisplay();
           while (digitalRead(leftButton) == HIGH);
       }
       if(digitalRead(rightButton) == HIGH){
+        if (exerciseSelector > 7){ //make sure that selector doesn't go above array space alloted
+          exerciseSelector = 7;
+        }
+        else {
           exerciseSelector++;
+        }
           delay(250);
           exerciseDisplay();
           while (digitalRead(leftButton) == HIGH);  
@@ -277,7 +289,9 @@ void startWorkout() {
     lcd.print("Starting in..");
     lcd.setCursor(8,1);
     lcd.print(i);
+    analogWrite(buzzPin, 100);
     delay(1000);
+    analogWrite(buzzPin, LOW);
   }//countdown loop ends
   for (int i = 0; i < maxExercises; i++){ // main workout logic loop
     lcd.clear();
@@ -291,7 +305,16 @@ void startWorkout() {
       lcd.setCursor(1,1);
       lcd.print("Time left:  ");
       lcd.print(i);
-      delay(1000);
+      
+      if (i < 6 && i != 1){
+        analogWrite(buzzPin, 100);
+      }
+      if(i == 1) {
+        analogWrite(buzzPin, 100);
+        delay(500);
+      }
+        delay(1000);
+        analogWrite(buzzPin, LOW);
     }// timer on loop ends
     for(int i = timerOff; i > 0; i--){
       lcd.clear();
@@ -299,7 +322,11 @@ void startWorkout() {
       lcd.print("Take a break");
       lcd.setCursor(7,1);
       lcd.print(i);
+      if ( i < 4) {
+        analogWrite(buzzPin, 100);
+      }
       delay(1000);
+      analogWrite(buzzPin, LOW);
     }//timer off loop ends
   }// main workout loop ends
   
